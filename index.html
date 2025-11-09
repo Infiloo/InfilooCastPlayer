@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InfilooCast Player</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      background: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .player {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(15px);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 25px;
+      padding: 40px 60px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      color: #fff;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    .player h1 {
+      font-size: 1.8rem;
+      margin-bottom: 25px;
+      font-weight: 500;
+    }
+
+    .play-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+      width: 90px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .play-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.05);
+    }
+
+    .play-btn svg {
+      width: 40px;
+      height: 40px;
+      fill: white;
+      pointer-events: none;
+    }
+
+    .status {
+      margin-top: 20px;
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Neuer Glas-Button */
+    .glass-btn {
+      margin-top: 25px;
+      padding: 12px 30px;
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(12px);
+      color: #fff;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .glass-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+
+  <div class="player">
+    <h1>InfilooCast Player</h1>
+    <div class="play-btn" id="playButton">
+      <svg id="playIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+    </div>
+    <p class="status" id="statusText">Ready to Play</p>
+
+    <!-- Neuer Button -->
+    <a href="https://laut.fm/infiloocast" target="_blank" class="glass-btn">Homepage</a>
+  </div>
+
+  <audio id="radioStream" src="https://stream.laut.fm/infiloocast"></audio>
+
+  <script>
+    // Player-Logik
+    const playButton = document.getElementById('playButton');
+    const playIcon = document.getElementById('playIcon');
+    const radioStream = document.getElementById('radioStream');
+    const statusText = document.getElementById('statusText');
+
+    let isPlaying = false;
+
+    playButton.addEventListener('click', () => {
+      if (!isPlaying) {
+        radioStream.play()
+          .then(() => {
+            isPlaying = true;
+            playIcon.innerHTML = '<path d="M6 19h4V5H6zm8-14v14h4V5h-4z"/>';
+            statusText.textContent = "Streaming InfilooCast...";
+          })
+          .catch(error => {
+            statusText.textContent = "Fehler beim Starten des Streams";
+            console.error(error);
+          });
+      } else {
+        radioStream.pause();
+        isPlaying = false;
+        playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+        statusText.textContent = "Stopped";
+      }
+    });
+
+    // Einfacher animierter Hintergrund
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    const particles = [];
+    const particleCount = 100;
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 3 + 1,
+        dx: (Math.random() - 0.5) * 1.5,
+        dy: (Math.random() - 0.5) * 1.5
+      });
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.x += p.dx;
+        p.y += p.dy;
+
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fill();
+      });
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
